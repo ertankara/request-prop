@@ -9,7 +9,6 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
   const keys = Object.keys(rawObject);
   const hasModifiers = modifications.length > 0;
   const newlyConstructedObject = {};
-  console.log('progress 1');
 
   for (const key of keys) {
     let propName = key;
@@ -18,21 +17,18 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
 
     // Means that the user has requested this prop
     if (indexOfKeyInTheRequestedProps !== -1) {
-      console.log('progress 2');
       const didUserRenamePropName = requestedProps[indexOfKeyInTheRequestedProps]
         .indexOf(renameIndication) !== -1;
 
       // If the prop in the requestedProps has a special character `renameIndication` in it
       // then user wants to rename the prop, so do it
       if (didUserRenamePropName) {
-        console.log('progress 3')
         // Get the new name for the prop
         propName = requestedProps[indexOfKeyInTheRequestedProps].split(renameIndication)[1];
       }
 
       // If user wants to perform modifications on the retrieved prop val
       if (hasModifiers && modifications.includes(key)) {
-        console.log('progress 4');
         // Get the key's index first and then find the function which
         // is expected receive
         const modifier = modifications[modifications.findIndex(el => el === key) + 1];
@@ -43,7 +39,6 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
         // Operate on data and store it
         newlyConstructedObject[propName] = modifier(rawObject[key]);
       } else { // If user provided no modifier simply bind data
-        console.log('progress 5');
         newlyConstructedObject[propName] = rawObject[key];
       }
     }
@@ -76,7 +71,6 @@ function requestProps(rawData, requestedProps, modifications = [], renameIndicat
   }
 
   if (!Array.isArray(rawData)) {
-    console.log('Progress 6')
     return objectOperator(rawData, requestedProps, modifications, renameIndication);
   }
 

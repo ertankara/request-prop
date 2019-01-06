@@ -1,37 +1,70 @@
-# NPM Module Boilerplate
+# Usage
 
-[![Build Status](https://travis-ci.org/flexdinesh/npm-module-boilerplate.svg?branch=master)](https://travis-ci.org/flexdinesh/npm-module-boilerplate) [![dependencies Status](https://david-dm.org/flexdinesh/npm-module-boilerplate/status.svg)](https://david-dm.org/flexdinesh/npm-module-boilerplate) [![devDependencies Status](https://david-dm.org/flexdinesh/npm-module-boilerplate/dev-status.svg)](https://david-dm.org/flexdinesh/npm-module-boilerplate?type=dev) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+### Retrieving props from the objects in the array and building new array with
 
-**Start developing your NPM module in seconds** ✨
+```javascript
+var RequestProps = require('request-prop');
 
-Readymade boilerplate setup with all the best practices to kick start your npm/node module development.
+const exampleComplexArrayFromSomeNetworkRequest = [
+  { Id: '4466t-5564edd-444yyhh88-55ffcjkhh', Name: 'Michael Jackson (the coder one)', Age: 26, FavLang: 'JavaScript' },
+  { Id: '4466t-5564edd-444yyhh88-77rr212ss', Name: 'Harry Potter', Age: 26, FavLang: 'Java' },
+  { Id: '4466t-5564edd-444yyhh88-bbxbmmcee', Name: 'Marry Poppins', Age: 26, FavLang: 'Python' },
+  { Id: '4466t-5564edd-444yyhh88-596ss2q35', Name: 'John Doe', Age: 26, FavLang: 'Rust' },
+];
 
-Happy hacking =)
+const newArrayWithDesiredProps = RequestProps(
+  exampleComplexArrayFromSomeNetworkRequest, // The raw array to extract data from
+  ['Id', 'FavLang']
+);
 
-# Features
+// Returns [{Id: '.....', FavLang: '....'}, {...}, {...}, {...}]
+```
 
-* **ES6/ESNext** - Write _ES6_ code and _Babel_ will transpile it to ES5 for backwards compatibility
-* **Test** - _Mocha_ with _Istanbul_ coverage
-* **Lint** - Preconfigured _ESlint_ with _Airbnb_ config
-* **CI** - _TravisCI_ configuration setup
-* **Minify** - Built code will be minified for performance
+### Renaming props, changing case style or making it more descriptive
 
-# Commands
-- `npm run clean` - Remove `lib/` directory
-- `npm test` - Run tests with linting and coverage results.
-- `npm test:only` - Run tests without linting or coverage.
-- `npm test:watch` - You can even re-run tests on file changes!
-- `npm test:prod` - Run tests with minified code.
-- `npm run test:examples` - Test written examples on pure JS for better understanding module usage.
-- `npm run lint` - Run ESlint with airbnb-config
-- `npm run cover` - Get coverage report for your code.
-- `npm run build` - Babel will transpile ES6 => ES5 and minify the code.
-- `npm run prepublish` - Hook for npm. Do all the checks before publishing your module.
+```javascript
+const newArrayRenamedProps = RequestProps(
+  exampleComplexArrayFromSomeNetworkRequest,
+  // The left side of the colon has to match the original name
+  ['Id:id', 'FavLang:favLang'] // I'm a camel case lover
+);
 
-# Installation
-Just clone this repo and remove `.git` folder.
+// Returns [{id: '.....', favLang: '.....'}, {...}, {...}, {...}]
+```
 
 
-# License
+### Extracting data out of object itself, not the array
+```javascript
+const extractDataOutOfObject = RequestProps(
+  { Id: '...', Name: '....' },
+  ['Id:myId', 'Name:myName']
+);
+```
 
-MIT © Dinesh Pandiyan
+
+### Using modifiers third optional parameter
+
+```javascript
+const modifiedProps = RequestProps(
+  exampleComplexArrayFromSomeNetworkRequest,
+  // To use it in modifiers, it has to exist in the requested props first.
+  ['Age:age'],
+  // Has to match the original prop name not the modified name
+  ['Age', function tenYearsLater(age){ return age + 10 }]
+);
+
+// Return [{age: 36}, {...}, {...}, {...}];
+```
+
+### Using custom rename indication character
+
+```javascript
+// The default is `:` but you are able to change
+// by simply providing a character as last character
+const customRenameIndicator = RequestProps(
+  {Name: 'Jane', Lastname: 'Doe'},
+  ['Name@name', 'Lastname@lastname'],
+  [], // Empty modifications array, to get the last foruth optional
+  '@' // Providing the custom rename indication character
+);
+```
