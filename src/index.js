@@ -6,7 +6,11 @@
  * @returns {object}
  */
 function objectOperator(rawObject, requestedProps, modifications, renameIndication, paramSeparator) {
-  const keys = Object.keys(rawObject);
+  const rawKeys = Object.keys(rawObject);
+  const keys = rawKeys.filter(rawKey => {
+    const requestedKeys = Object.values(requestedProps)
+    return requestedKeys.find(el => el.split(renameIndication)[0] === rawKey);
+  });
   const hasModifiers = modifications.length > 0;
   const newlyConstructedObject = {};
   const groupOfOperands = [];
@@ -104,12 +108,6 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
         if (!newlyConstructedObject.hasOwnProperty(propName)) {
           newlyConstructedObject[propName] = cache[key];
         }
-        // if (!newlyConstructedObject.hasOwnProperty(propName)) {
-        //   newlyConstructedObject[propName] = cache[propName]
-        // } else if (didUserRenamePropName && !newlyConstructedObject.hasOwnProperty(propName)) {
-        //   propName = requestedProps[indexOfKeyInTheRequestedProps].split(renameIndication)[1].trim();
-        //   newlyConstructedObject[propName] = cache[propName];
-        // }
       }
     }
   }
@@ -133,7 +131,7 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
  * @param {string} paramSeparator Where to start parsing params received by modifiers
  * @returns {array} extracted data
  */
-function requestProps(rawData, requestedProps, modifications = [], renameIndication = ':', paramSeparator = ',') {
+function requestProp(rawData, requestedProps, modifications = [], renameIndication = ':', paramSeparator = ',') {
   if (
     rawData === undefined ||
     !Array.isArray(requestedProps)
@@ -161,4 +159,4 @@ function requestProps(rawData, requestedProps, modifications = [], renameIndicat
   return extractedData;
 }
 
-export default requestProps;
+export default requestProp;
