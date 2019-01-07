@@ -1,6 +1,10 @@
 # Code
 [See the code at github repo](https://github.com/ertankara/request-prop)
 
+# Installation
+
+`npm i request-prop --save`
+
 # Usage
 
 ### Retrieving props from the objects in the array and building new array with
