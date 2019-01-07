@@ -109,6 +109,19 @@ describe('Altering prop name', () => {
 
     assert(expectedVal, 'Failed to alter the name of the retrieved prop');
   });
+
+  it('should be able to handle spaces while renaming props', () => {
+    let expectedVal = true;
+
+    const retrievedVal = RequestProps(
+      {id: 'HHWE-1256'},
+      ['id: Id']
+    );
+
+    if (!retrievedVal.hasOwnProperty('Id')) expectedVal = false;
+
+    assert(expectedVal, 'Fails to handle space in prop names')
+  })
 });
 
 
@@ -132,8 +145,22 @@ describe('Applying modifications', () => {
       }
     }
 
-
     assert(expectedVal, 'Failed to apply modifications on retrieved props');
+  });
+
+  it('should apply modifications on multiple props', () => {
+    let expectedVal = true;
+
+    const retrievedVal = RequestProps(
+      {name: 'Jane', greetMessage: 'Hello'},
+      ['name', 'greetMessage'],
+      ['name, greetMessage:myGreetMessage', (name, greetMessage) => `${greetMessage} ${name}`],
+    )
+
+    if (!retrievedVal.hasOwnProperty('myGreetMessage')) expectedVal = false;
+    else if (retrievedVal['myGreetMessage'] !== 'Hello Jane') expectedVal = false;
+
+    assert(expectedVal, 'Fails to modify on multiple props');
   });
 });
 

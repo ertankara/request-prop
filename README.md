@@ -1,3 +1,6 @@
+# Code
+[See the code at github repo](https://github.com/ertankara/request-prop)
+
 # Usage
 
 ### Retrieving props from the objects in the array and building new array with
@@ -54,6 +57,26 @@ const modifiedProps = RequestProps(
 );
 
 // Return [{age: 36}, {...}, {...}, {...}];
+```
+
+### Using modifiers that operates on multiple prop
+```javascript
+const person = {
+  day: '11',
+  month: '06',
+  year: '1996'
+}
+
+// If operating on multiple props, the last param, needs to be named
+// this name will be prop in the returned object which holds value of
+// function's return value, the returned object will also hold all of the
+// requested props
+RequestProps(
+  person,
+  // Notice that, first param of modifications array is a whole string
+  // Not a seperated params, that might give you a headache
+  ['day: DAY', 'month: MONTH', 'year: YEAR'], ['day, month, year:birthday', (day, month, year) => `${day}/${month}/${year}`]
+) // Returns -> { DAY: '11', MONTH: '06', birthday: '11/06/1996', YEAR: '1996' }
 ```
 
 ### Using custom rename indication character
