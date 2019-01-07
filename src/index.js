@@ -150,7 +150,8 @@ function requestProp(rawData, requestedProps, modifications = [], renameIndicati
       data,
       requestedProps,
       modifications,
-      renameIndication
+      renameIndication,
+      paramSeparator
     );
 
     extractedData.push(newlyConstructedObject);
