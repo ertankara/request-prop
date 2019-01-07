@@ -5,6 +5,15 @@
 
 `npm i request-prop --save`
 
+# Contribute
+
+Contributions are welcome, you can get up and running by cloning the project
+and running following command in the CLI
+
+Assuming that you have `node` and `npm` installed
+
+`npm i || npm install`
+
 # Usage
 
 ### Retrieving props from the objects in the array and building new array with
