@@ -79,11 +79,15 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
                   typeof eachGroup[i] !== 'function' &&
                   eachGroup[i].split(':')[0] === cachedKey
                 ) {
-                  paramsToProvide.push(cache[cachedKey]);
+                  paramsToProvide.push({ arg: cache[cachedKey], index: i });
                 }
               }
             }
-            const operationResult = modifier(...paramsToProvide);
+
+            const operationResult = modifier(...paramsToProvide
+              .sort((a, b) => a.index - b.index) // Sort them according to the way they are provided
+              .map(el => el.arg)); // Retrun the arguments alone
+
             newlyConstructedObject[propName.trim()] = operationResult;
           }
 

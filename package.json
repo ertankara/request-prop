@@ -1,6 +1,6 @@
 {
   "name": "request-prop",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Abstracted way of extracting props from an object",
   "main": "./lib/index.js",
   "scripts": {
