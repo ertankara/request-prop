@@ -165,5 +165,4 @@ function requestProp(rawData, requestedProps, modifications = [], renameIndicati
   return extractedData;
 }
 
-// export default requestProp;
-module.exports = requestProp;
+export default requestProp;

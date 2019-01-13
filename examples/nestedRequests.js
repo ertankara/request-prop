@@ -30,5 +30,5 @@ const extractedData = requestProp(
   ]
 );
 
-console.log('strict machine', JSON.stringify(extractedData));
+console.log(JSON.stringify(extractedData));
 // [{"name":"Jane","hobbies":[{"daily":["read"],"weekly":["write"]}]}]
