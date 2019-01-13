@@ -7,14 +7,15 @@
  */
 function objectOperator(rawObject, requestedProps, modifications, renameIndication, paramSeparator) {
   const rawKeys = Object.keys(rawObject);
+  const requestedKeys = Object.values(requestedProps);
   const keys = rawKeys.filter(rawKey => {
-    const requestedKeys = Object.values(requestedProps)
     return requestedKeys.find(el => el.split(renameIndication)[0] === rawKey);
   });
   const hasModifiers = modifications.length > 0;
   const newlyConstructedObject = {};
   const groupOfOperands = [];
   const cache = {};
+  const lastKeyOfKeys = keys[keys.length - 1];
   let extractedMultiProps = false;
   let isLastKey = false;
 
@@ -38,8 +39,8 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
   }
 
   for (const key of keys) {
-    // If checking the last element
-    if (keys[keys.findIndex(el => el === key)] === keys[keys.length - 1]) {
+    // Checking if the last element
+    if (key === lastKeyOfKeys) {
       // Necessary because I need to cache all elements before
       // performing operations that operates on multiple prop
       isLastKey = true;
@@ -52,7 +53,7 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
       .findIndex(el => el.split(renameIndication)[0].trim() === key);
 
     // Means that the user has requested this prop
-    if (indexOfKeyInTheRequestedProps !== -1) {
+    //if (indexOfKeyInTheRequestedProps !== -1) {
       includeInTheReturnVal = true;
       const didUserRenamePropName = requestedProps[indexOfKeyInTheRequestedProps]
         .indexOf(renameIndication) !== -1;
@@ -72,7 +73,7 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
             const modifier = eachGroup[eachGroup.length - 1]; // The function
             const paramsToProvide = [];
             // Shouldn't interfere with the outer scope propName
-            let propName = eachGroup[eachGroup.length - 2].split(':')[1].trim();
+            let propNameOfModifiedResult = eachGroup[eachGroup.length - 2].split(':')[1].trim();
             for (const cachedKey of Object.keys(cache)) {
               for (let i = 0; i < eachGroup.length; i++) {
                 if (
@@ -88,7 +89,7 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
               .sort((a, b) => a.index - b.index) // Sort them according to the way they are provided
               .map(el => el.arg)); // Retrun the arguments alone
 
-            newlyConstructedObject[propName.trim()] = operationResult;
+            newlyConstructedObject[propNameOfModifiedResult.trim()] = operationResult;
           }
 
           extractedMultiProps = true;
@@ -113,7 +114,7 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
           newlyConstructedObject[propName] = cache[key];
         }
       }
-    }
+    //}
   }
 
   return newlyConstructedObject;
@@ -164,4 +165,5 @@ function requestProp(rawData, requestedProps, modifications = [], renameIndicati
   return extractedData;
 }
 
-export default requestProp;
+// export default requestProp;
+module.exports = requestProp;
