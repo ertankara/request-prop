@@ -15,6 +15,8 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
   const newlyConstructedObject = {};
   const groupOfOperands = [];
   const cache = {};
+  // It's okay not to worry about duplicate same name props
+  // because that wouldn't be possible
   const lastKeyOfKeys = keys[keys.length - 1];
   let extractedMultiProps = false;
   let isLastKey = false;
@@ -48,72 +50,74 @@ function objectOperator(rawObject, requestedProps, modifications, renameIndicati
     // Cache the props and values
     cache[key] = rawObject[key];
     let propName = key;
-    let includeInTheReturnVal = false;
     const indexOfKeyInTheRequestedProps = requestedProps
       .findIndex(el => el.split(renameIndication)[0].trim() === key);
 
     // Means that the user has requested this prop
     //if (indexOfKeyInTheRequestedProps !== -1) {
-      includeInTheReturnVal = true;
-      const didUserRenamePropName = requestedProps[indexOfKeyInTheRequestedProps]
-        .indexOf(renameIndication) !== -1;
+    const didUserRenamePropName = requestedProps[indexOfKeyInTheRequestedProps]
+      .indexOf(renameIndication) !== -1;
 
-      // If the prop in the requestedProps has a special character `renameIndication` in it
-      // then user wants to rename the prop, so do it
-      if (didUserRenamePropName) {
-        // Get the new name for the prop
-        propName = requestedProps[indexOfKeyInTheRequestedProps].split(renameIndication)[1].trim();
-      }
+    // If the prop in the requestedProps has a special character `renameIndication` in it
+    // then user wants to rename the prop, so do it
+    if (didUserRenamePropName) {
+      // Get the new name for the prop
+      propName = requestedProps[indexOfKeyInTheRequestedProps].split(renameIndication)[1].trim();
+    }
 
-      // If user wants to perform modifications on the retrieved prop val
-      if (hasModifiers) {
-        if (groupOfOperands.length > 0 && !extractedMultiProps && isLastKey) { // Data needs to be extracted
-          // Last prop should be followed by new prop name
-          for (const eachGroup of groupOfOperands) {
-            const modifier = eachGroup[eachGroup.length - 1]; // The function
-            const paramsToProvide = [];
-            // Shouldn't interfere with the outer scope propName
-            let propNameOfModifiedResult = eachGroup[eachGroup.length - 2].split(':')[1].trim();
-            for (const cachedKey of Object.keys(cache)) {
-              for (let i = 0; i < eachGroup.length; i++) {
-                if (
-                  typeof eachGroup[i] !== 'function' &&
-                  eachGroup[i].split(':')[0] === cachedKey
-                ) {
-                  paramsToProvide.push({ arg: cache[cachedKey], index: i });
-                }
-              }
-            }
+    // If user wants to perform modifications on the retrieved prop val
+    if (hasModifiers) {
+      if (groupOfOperands.length > 0 && !extractedMultiProps && isLastKey) { // Data needs to be extracted
+        // Last prop should be followed by new prop name
+        for (const eachGroup of groupOfOperands) {
+          const modifier = eachGroup[eachGroup.length - 1]; // The function
 
-            const operationResult = modifier(...paramsToProvide
-              .sort((a, b) => a.index - b.index) // Sort them according to the way they are provided
-              .map(el => el.arg)); // Retrun the arguments alone
-
-            newlyConstructedObject[propNameOfModifiedResult.trim()] = operationResult;
-          }
-
-          extractedMultiProps = true;
-        } else if (modifications.includes(key)) {
-          // Get the key's index first and then find the function which
-          // is expected receive
-          const modifier = modifications[modifications.findIndex(el => el === key) + 1];
-          if (!modifier || typeof modifier !== 'function') { // User has to provide a function as a following element
+          if (typeof modifier !== 'function') {
             throw new Error('Modifiers has to follow the element to operate on');
           }
 
-          // Operate on data and store it
-          newlyConstructedObject[propName.trim()] = modifier(rawObject[key]);
-        }
-      } else { // If user provided no modifier simply bind data
-        newlyConstructedObject[propName.trim()] = rawObject[key];
-      }
+          const paramsToProvide = [];
+          // Shouldn't interfere with the outer scope propName
+          let propNameOfModifiedResult = eachGroup[eachGroup.length - 2].split(':')[1].trim();
+          for (const cachedKey of Object.keys(cache)) {
+            for (let i = 0; i < eachGroup.length; i++) {
+              if (
+                typeof eachGroup[i] !== 'function' &&
+                eachGroup[i].split(':')[0] === cachedKey
+              ) {
+                paramsToProvide.push({ arg: cache[cachedKey], index: i });
+              }
+            }
+          }
 
-      if (includeInTheReturnVal) {
+          const operationResult = modifier(
+            ...paramsToProvide
+            .sort((a, b) => a.index - b.index) // Sort them according to the way they are provided
+            .map(el => el.arg) // Retrun the arguments alone
+          );
 
-        if (!newlyConstructedObject.hasOwnProperty(propName)) {
-          newlyConstructedObject[propName] = cache[key];
+          newlyConstructedObject[propNameOfModifiedResult.trim()] = operationResult;
         }
+
+        extractedMultiProps = true;
+      } else if (modifications.includes(key)) {
+        // Get the key's index first and then find the function which
+        // is expected receive
+        const modifier = modifications[modifications.findIndex(el => el === key) + 1];
+        if (!modifier || typeof modifier !== 'function') { // User has to provide a function as a following element
+          throw new Error('Modifiers has to follow the element to operate on');
+        }
+
+        // Operate on data and store it
+        newlyConstructedObject[propName.trim()] = modifier(rawObject[key]);
       }
+    } else { // If user provided no modifier simply bind data
+      newlyConstructedObject[propName.trim()] = rawObject[key];
+    }
+
+    if (!newlyConstructedObject.hasOwnProperty(propName)) {
+      newlyConstructedObject[propName] = cache[key];
+    }
     //}
   }
 

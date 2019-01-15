@@ -1,5 +1,6 @@
 import { assert } from 'chai';
 import RequestProps from '../src';
+import requestProp from '../src';
 
 const exampleArray = [
   { id: 'f34ddva-gfghhvv-7775ffggcv', name: 'Jane', lastname: 'Doe', age: 26, favLanguage: 'JavaScript' },
@@ -186,5 +187,54 @@ describe('Throws error', () => {
     }
 
     assert(expectedVal, 'Failed to throw an error when modifier is not given');
-  })
+  });
+
+  it('should throw error if a function isn\'t provided after multiple prop operation', () => {
+    let isPassing = false;
+
+    try {
+      requestProp(
+        exampleArray,
+        ['name: my_name'],
+        ['name'] // Normally expected a function
+      );
+    } catch(e) {
+      isPassing = true;
+    }
+
+    assert(isPassing, 'Failed to throw error when when modifier isn\'t provided');
+  });
+
+  it('should throw error when element is provided but not typeof function', () => {
+    let isPassing = false;
+
+    try {
+      requestProp(
+        exampleArray,
+        ['name: Name', 'id: Id'],
+        ['name', 'some random value']
+      );
+    } catch(e) {
+      isPassing = true;
+    }
+
+
+    assert(isPassing, 'Failed to throw error when element is provided to modifications array, but type fails');
+  });
+
+  it('should throw error if operating on multi prop and no modifier specified', () => {
+    let isPassing = false;
+
+    try {
+      requestProp(
+        exampleArray,
+        ['id: Id', 'name: Name'],
+        ['id, name: selfData', ]
+      )
+    } catch(e) {
+      isPassing = true;
+    }
+
+    assert(isPassing, 'we do both agree');
+  });
 });
