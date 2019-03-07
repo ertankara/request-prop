@@ -132,8 +132,14 @@ describe('Applying modifications', () => {
 
     const retrievedVal = RequestProps(
       exampleArray,
-      ['age', 'id'],
-      ['age', function tenYearsLater(age) { return age + 10 }]
+      ['!age', 'id'],
+      [
+        {
+          props: ['age'],
+          computedName: 'age',
+          operator: a => a + 10
+        }
+      ]
     );
 
     for (const val of retrievedVal) {
@@ -155,7 +161,13 @@ describe('Applying modifications', () => {
     const retrievedVal = RequestProps(
       {name: 'Jane', greetMessage: 'Hello'},
       ['name', 'greetMessage'],
-      ['name, greetMessage:myGreetMessage', (name, greetMessage) => `${greetMessage} ${name}`],
+      [
+        {
+          props: ['name', 'greetMessage'],
+          computedName: 'myGreetMessage',
+          operator: (n, g) => `${g} ${n}`
+        }
+      ]
     )
 
     if (!retrievedVal.hasOwnProperty('myGreetMessage')) expectedVal = false;

@@ -1,146 +1,90 @@
 /**
- * If user wants to extract object props instead of objects that are
- * inside the array then this function should operate on the rawData
- * @param {object} rawObject
- * @param {array} requestedProps
- * @returns {object}
+ * Returns requested property values from object
+ * @param {Object} rawObject raw object to extract data from
+ * @param {Array} requestedProps requested props from the raw object
+ * @param {Array} modifications modifications array to operate on raw props
+ * @param {Strings} renameIndication The character to determine returned prop rename indication
+ * @returns {Object} An object that will contain the requested or modified keys
  */
-function objectOperator(rawObject, requestedProps, modifications, renameIndication, paramSeparator) {
-  const rawKeys = Object.keys(rawObject);
-  const requestedKeys = Object.values(requestedProps);
-  const keys = rawKeys.filter(rawKey => {
-    return requestedKeys.find(el => el.split(renameIndication)[0] === rawKey);
-  });
-  const hasModifiers = modifications.length > 0;
+
+const objectOperator = (rawObject, requestedProps, modifications, renameIndication) => {
   const newlyConstructedObject = {};
-  const groupOfOperands = [];
-  const cache = {};
-  // It's okay not to worry about duplicate same name props
-  // because that wouldn't be possible
-  const lastKeyOfKeys = keys[keys.length - 1];
-  let extractedMultiProps = false;
+  const hasModifiers = modifications.length > 0;
+  const lastRequestedKey = requestedProps[requestedProps.length - 1];
+  const bucket = {};
   let isLastKey = false;
 
-  if (hasModifiers) {
-    let hasMultiParam;
-    let splittedFormOfElement;
-
-    for (let i = 0; i < modifications.length; i++) {
-      hasMultiParam = false;
-      if (i % 2 === 0) { // Elements has to have the even index
-        splittedFormOfElement = modifications[i].split(paramSeparator)
-          .map(key => key.trim());
-        // If the modifier is operating on multi prop
-        hasMultiParam = splittedFormOfElement.length > 1;
-      }
-
-      if (hasMultiParam) {       // Refers to operands // Refers to operator function
-        groupOfOperands.push([...splittedFormOfElement, modifications[i + 1]]);
-      }
-    }
-  }
-
-  for (const key of keys) {
-    // Checking if the last element
-    if (key === lastKeyOfKeys) {
-      // Necessary because I need to cache all elements before
-      // performing operations that operates on multiple prop
+  for (const key of requestedProps) {
+    if (key === lastRequestedKey) {
       isLastKey = true;
     }
-    // Cache the props and values
-    cache[key] = rawObject[key];
-    let propName = key;
-    const indexOfKeyInTheRequestedProps = requestedProps
-      .findIndex(el => el.split(renameIndication)[0].trim() === key);
 
-    // Means that the user has requested this prop
-    //if (indexOfKeyInTheRequestedProps !== -1) {
-    const didUserRenamePropName = requestedProps[indexOfKeyInTheRequestedProps]
-      .indexOf(renameIndication) !== -1;
+    const propIndexPosition = key.indexOf('!') === -1 ? 0 : 1;
 
-    // If the prop in the requestedProps has a special character `renameIndication` in it
-    // then user wants to rename the prop, so do it
-    if (didUserRenamePropName) {
-      // Get the new name for the prop
-      propName = requestedProps[indexOfKeyInTheRequestedProps].split(renameIndication)[1].trim();
-    }
+    // Remove configuration symbols from propname
+    const propName = key
+      .split('!')[propIndexPosition]
+      .split(renameIndication)[0]
+      .trim();
 
-    // If user wants to perform modifications on the retrieved prop val
-    if (hasModifiers) {
-      if (groupOfOperands.length > 0 && !extractedMultiProps && isLastKey) { // Data needs to be extracted
-        // Last prop should be followed by new prop name
-        for (const eachGroup of groupOfOperands) {
-          const modifier = eachGroup[eachGroup.length - 1]; // The function
+    // Throw into bucket for future use
+    bucket[propName] = rawObject[propName];
 
-          if (typeof modifier !== 'function') {
-            throw new Error('Modifiers has to follow the element to operate on');
-          }
+    const didUserRenameProp = key
+      .split('!')[propIndexPosition]
+      .split(':')
+      .length > 1;
 
-          const paramsToProvide = [];
-          // Shouldn't interfere with the outer scope propName
-          let propNameOfModifiedResult = eachGroup[eachGroup.length - 2].split(':')[1].trim();
-          for (const cachedKey of Object.keys(cache)) {
-            for (let i = 0; i < eachGroup.length; i++) {
-              if (
-                typeof eachGroup[i] !== 'function' &&
-                eachGroup[i].split(':')[0] === cachedKey
-              ) {
-                paramsToProvide.push({ arg: cache[cachedKey], index: i });
-              }
-            }
-          }
+    if (isLastKey && hasModifiers) {
+      for (const modification of modifications) {
+        const { props, computedName, operator } = modification
+        const valueOfTargetProps = [];
 
-          const operationResult = modifier(
-            ...paramsToProvide
-            .sort((a, b) => a.index - b.index) // Sort them according to the way they are provided
-            .map(el => el.arg) // Retrun the arguments alone
-          );
-
-          newlyConstructedObject[propNameOfModifiedResult.trim()] = operationResult;
+        for (const prop of props) {
+          valueOfTargetProps.push(bucket[prop.trim()]);
         }
-
-        extractedMultiProps = true;
-      } else if (modifications.includes(key)) {
-        // Get the key's index first and then find the function which
-        // is expected receive
-        const modifier = modifications[modifications.findIndex(el => el === key) + 1];
-        if (!modifier || typeof modifier !== 'function') { // User has to provide a function as a following element
-          throw new Error('Modifiers has to follow the element to operate on');
-        }
-
-        // Operate on data and store it
-        newlyConstructedObject[propName.trim()] = modifier(rawObject[key]);
+        newlyConstructedObject[computedName.trim()] = operator(...valueOfTargetProps);
       }
-    } else { // If user provided no modifier simply bind data
-      newlyConstructedObject[propName.trim()] = rawObject[key];
     }
 
-    if (!newlyConstructedObject.hasOwnProperty(propName)) {
-      newlyConstructedObject[propName] = cache[key];
+    // If the index is 0, then there was no `!` so user wanted
+    // to have this prop in the return value
+    const shouldIncludePropInReturnValue = propIndexPosition === 0;
+
+    if (shouldIncludePropInReturnValue) {
+      if (didUserRenameProp) {
+        const newPropName = key
+          .split('!')[propIndexPosition]
+          .split(':')[1]
+          .trim();
+
+        newlyConstructedObject[newPropName] = bucket[propName];
+      }
+      else {
+        newlyConstructedObject[propName] = bucket[propName];
+      }
     }
-    //}
   }
 
   return newlyConstructedObject;
 }
 
+
+
 /**
  * Returns a new array from the given array of objects
  * with objects but only requested props
- * @param {object} rawData
- * @param {array} requestedProps
- * @param {array} modifications
- * an array that is made of keys and functions first key is given and
- * then the next element which is a function will be executed on this
- * element. Order of the elements matters! Key has to be followed by it's modifier
+ * @param {object} rawData raw data to extract props from
+ * @param {array} requestedProps array of requested keys from object
+ * @param {array} modifications an array to perform modifications on raw data
  * !__IMPORTANT__! -> You have to provide every requested key in the requestedProps
- *                    otherwise you won't get it. Specifying in the modifications
- *                    alone isn't enough.
- * @param {string} renameIndication
- * @param {string} paramSeparator Where to start parsing params received by modifiers
- * @returns {array} extracted data
+ *                    otherwise modifications won't have access to it.
+ *                    Specifying in the modifications alone isn't enough!
+ * @param {string} renameIndication renaming of prop indication
+ * @returns {array | object} depends on input, if array is given hands
+ *                           back a new array of objects with requested keys only or object
  */
-function requestProp(rawData, requestedProps, modifications = [], renameIndication = ':', paramSeparator = ',') {
+const requestProp = (rawData, requestedProps, modifications = [], renameIndication = ':') => {
   if (
     rawData === undefined ||
     !Array.isArray(requestedProps)
@@ -149,7 +93,7 @@ function requestProp(rawData, requestedProps, modifications = [], renameIndicati
   }
 
   if (!Array.isArray(rawData)) {
-    return objectOperator(rawData, requestedProps, modifications, renameIndication, paramSeparator);
+    return objectOperator(rawData, requestedProps, modifications, renameIndication);
   }
 
   const extractedData = [];
@@ -159,8 +103,7 @@ function requestProp(rawData, requestedProps, modifications = [], renameIndicati
       data,
       requestedProps,
       modifications,
-      renameIndication,
-      paramSeparator
+      renameIndication
     );
 
     extractedData.push(newlyConstructedObject);
