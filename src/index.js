@@ -7,7 +7,7 @@
  * @returns {Object} An object that will contain the requested or modified keys
  */
 
-const objectOperator = (rawObject, requestedProps, modifications, renameIndication) => {
+const objectOperator = (rawObject, requestedProps, modifications, additionalProps, renameIndication) => {
   const newlyConstructedObject = {};
   const hasModifiers = modifications.length > 0;
   const lastRequestedKey = requestedProps[requestedProps.length - 1];
@@ -32,7 +32,7 @@ const objectOperator = (rawObject, requestedProps, modifications, renameIndicati
 
     const didUserRenameProp = key
       .split('!')[propIndexPosition]
-      .split(':')
+      .split(renameIndication)
       .length > 1;
 
     if (isLastKey && hasModifiers) {
@@ -55,7 +55,7 @@ const objectOperator = (rawObject, requestedProps, modifications, renameIndicati
       if (didUserRenameProp) {
         const newPropName = key
           .split('!')[propIndexPosition]
-          .split(':')[1]
+          .split(renameIndication)[1]
           .trim();
 
         newlyConstructedObject[newPropName] = bucket[propName];
@@ -64,6 +64,12 @@ const objectOperator = (rawObject, requestedProps, modifications, renameIndicati
         newlyConstructedObject[propName] = bucket[propName];
       }
     }
+  }
+
+  if (additionalProps.length > 0) {
+    additionalProps.forEach(([key, value]) => {
+      newlyConstructedObject[key] = value;
+    });
   }
 
   return newlyConstructedObject;
@@ -84,7 +90,7 @@ const objectOperator = (rawObject, requestedProps, modifications, renameIndicati
  * @returns {array | object} depends on input, if array is given hands
  *                           back a new array of objects with requested keys only or object
  */
-const requestProp = (rawData, requestedProps, modifications = [], renameIndication = ':') => {
+const requestProp = (rawData, requestedProps, modifications = [], additionalProps = [], renameIndication = ':') => {
   if (
     rawData === undefined ||
     !Array.isArray(requestedProps)
@@ -93,7 +99,7 @@ const requestProp = (rawData, requestedProps, modifications = [], renameIndicati
   }
 
   if (!Array.isArray(rawData)) {
-    return objectOperator(rawData, requestedProps, modifications, renameIndication);
+    return objectOperator(rawData, requestedProps, modifications, additionalProps, renameIndication);
   }
 
   const extractedData = [];
