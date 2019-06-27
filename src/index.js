@@ -67,7 +67,7 @@ const objectOperator = (rawObject, requestedProps, modifications, additionalProp
   }
 
   if (additionalProps.length > 0) {
-    additionalProps.forEach(([key, value]) => {
+    additionalProps.forEach(({ key, value }) => {
       newlyConstructedObject[key] = value;
     });
   }
@@ -109,6 +109,7 @@ const requestProp = (rawData, requestedProps, modifications = [], additionalProp
       data,
       requestedProps,
       modifications,
+      additionalProps,
       renameIndication
     );
 

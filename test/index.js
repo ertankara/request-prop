@@ -1,5 +1,4 @@
 import { assert } from 'chai';
-import RequestProps from '../src';
 import requestProp from '../src';
 
 const exampleArray = [
@@ -8,245 +7,225 @@ const exampleArray = [
   { id: 'f34ddva-gfghhvv-6688ggggcc', name: 'John', lastname: 'Johnson', age: 35, favLanguage: 'Python' }
 ];
 
-describe('Main function behaviour', () => {
-  it('should return the requested props', () => {
-    let expectedVal = true;
+const exampleObject = {
+  age: 26,
+  name: 'Jane',
+  lastname: 'Doe',
+  favLanguage: 'JavaScript',
+  id: 'f34ddva-gfghhvv-7775ffggcv'
+};
 
-    const complexObjectWhichHasMorePropsThanINeed = {
-      id: 'f34ddva-gfghhvv-7775ffggcv',
-      name: 'Jane',
-      lastname: 'Doe',
-      age: 26,
-      favLanguage: 'JavaScript'
-    };
-
-    const retrievedVal = RequestProps(
-      complexObjectWhichHasMorePropsThanINeed,
-      ['name', 'lastname']
-    )
-
-    for (const key of Object.keys(retrievedVal)) {
-      const expectedKeys = ['name', 'lastname'];
-      if (!expectedKeys.includes(key)) {
-        expectedVal = false;
-      }
-    }
-
-
-    assert(expectedVal, 'Failed to return requested props');
-  });
-
-
-  it('shouldn\'t alter the value of the props while returning the object', () => {
-    let expectedVal = true;
-
-    const complexObjectWhichHasMorePropsThanINeed = {
-      id: 'f34ddva-gfghhvv-7775ffggcv',
-      name: 'Jane',
-      lastname: 'Doe',
-      age: 26,
-      favLanguage: 'JavaScript'
-    };
-
-    const retrievedVal = RequestProps(
-      complexObjectWhichHasMorePropsThanINeed,
-      ['name', 'lastname']
-    )
-
-    for (const key of Object.keys(retrievedVal)) {
-      const expectedKeys = ['name', 'lastname'];
-      if (
-        !expectedKeys.includes(key) &&
-        retrievedVal[key] !== complexObjectWhichHasMorePropsThanINeed[key]
-      ) {
-        expectedVal = false;
-      }
-    }
-
-    assert(expectedVal, 'The keys are retrieved but values don\'t match');
-  });
-
-
-  it('should be able to extract objects out of array with requested props', () => {
-    let expectedVal = true;
-
-    const retrievedVal = RequestProps(exampleArray, ['name']);
-
-    for (const obj of retrievedVal) {
-      if (!obj.name) expectedVal = false;
-      else if (obj.name.favLanguage) expectedVal = false;
-    }
-
-    assert(expectedVal, 'The objects returned from arrays contains expected props')
-  });
-
-  it('should be able to extract objects out of array with requested props without altering the value', () => {
-    const retrievedVal = RequestProps(exampleArray, ['name', 'id']);
-
-    let expectedVal = false;
-
-    for (const val of retrievedVal) {
-      for (const obj of exampleArray) {
-        if (val.id === obj.id) {
-          expectedVal = val.name === obj.name;
-        }
-      }
-    }
-
-    assert(expectedVal, 'The objects returned from arrays contains expected props and values match')
-  });
-});
-
-
-describe('Altering prop name', () => {
-  it('should be able to alter prop name', () => {
-    let expectedVal = true;
-    const retrievedVal = RequestProps(exampleArray, ['name:userName', 'id:userId']);
-
-    for (const val of retrievedVal) {
-      if (!val.hasOwnProperty('userName')) expectedVal = false;
-      else if (!val.hasOwnProperty('userId')) expectedVal = false;
-    }
-
-    assert(expectedVal, 'Failed to alter the name of the retrieved prop');
-  });
-
-  it('should be able to handle spaces while renaming props', () => {
-    let expectedVal = true;
-
-    const retrievedVal = RequestProps(
-      {id: 'HHWE-1256'},
-      ['id: Id']
+describe('Retrieving objects', () => {
+  it('returns requested props from object', () => {
+    const newObjectWithRequestedProps = requestProp(
+      exampleObject,
+      ['age', 'lastname']
     );
 
-    if (!retrievedVal.hasOwnProperty('Id')) expectedVal = false;
+    let didReturnProps = false;
 
-    assert(expectedVal, 'Fails to handle space in prop names')
-  })
+    if (
+      newObjectWithRequestedProps.hasOwnProperty('age') &&
+      newObjectWithRequestedProps.hasOwnProperty('lastname')
+    ) {
+      didReturnProps = true;
+    }
+
+    assert(didReturnProps, 'failed to construct a new object with requested props');
+  });
+
+  it('returns requested props from objects within an array', () => {
+    const newArrayWithObjectsWithRequestedKeys = requestProp(
+      exampleArray,
+      ['age', 'lastname']
+    );
+
+    let didReturnProps = true;
+
+    for (const obj of newArrayWithObjectsWithRequestedKeys) {
+      if (!obj.hasOwnProperty('age') || !obj.hasOwnProperty('lastname')) {
+        didReturnProps = false;
+      }
+    }
+
+    assert(didReturnProps, 'failed to construct a new array with objects with requested keys');
+  });
 });
 
+describe('Renaming requested props', () => {
+  it('renames requested props from object', () => {
+    const newObject = requestProp(
+      exampleObject,
+      ['age: userAge']
+    );
+
+    assert(newObject.hasOwnProperty('userAge'), 'failed to rename prop retrieved from object');
+  });
+
+  it('renames requested props from array', () => {
+    const newArray = requestProp(
+      exampleArray,
+      ['age: userAge']
+    );
+
+    let didRename = true;
+
+    for (const obj of newArray) {
+      if (!obj.hasOwnProperty('userAge')) {
+        didRename = false;
+      }
+    }
+
+    assert(didRename, 'failed to rename prop that is retrieved from an array');
+  });
+});
+
+describe('Excluding props', () => {
+  it('excludes unwanted props from object', () => {
+    const newObject = requestProp(
+      exampleObject,
+      ['!age', 'lastname']
+    );
+
+    let didExcludeProps = false;
+
+    if (newObject.hasOwnProperty('lastname') && !newObject.hasOwnProperty('age')) {
+      didExcludeProps = true;
+    }
+
+    assert(didExcludeProps, 'failed to exclude unwanted property');
+  });
+
+  it('excludes unwanted props from array', () => {
+    const newArray = requestProp(
+      exampleArray,
+      ['!age', 'lastname']
+    );
+
+    let didExcludeProps = true;
+
+    for (const obj of newArray) {
+      if (!obj.hasOwnProperty('lastname') && obj.hasOwnProperty('age')) {
+        didExcludeProps = false;
+      }
+    }
+
+    assert(didExcludeProps, 'failed to exclude props from array');
+  });
+});
 
 describe('Applying modifications', () => {
-  it('should apply modificaitions successfully', () => {
-    let expectedVal = true;
-
-    const retrievedVal = RequestProps(
-      exampleArray,
-      ['!age', 'id'],
-      [
-        {
-          props: ['age'],
-          computedName: 'age',
-          operator: a => a + 10
-        }
-      ]
+  it('able to apply modifications using the object properties', () => {
+    const newObject = requestProp(
+      exampleObject,
+      ['age'],
+      [{ props: ['age'], operator: age => age + 10, computedName: 'myAgeInTenYears' }]
     );
 
-    for (const val of retrievedVal) {
-      for (const obj of exampleArray) {
-        if (val.id === obj.id) {
-          if (!(val.age === obj.age + 10)) {
-            expectedVal = false;
-          }
-        }
+    let doesApplyModification = false;
+
+    if (
+      newObject.hasOwnProperty('myAgeInTenYears') &&
+      newObject.myAgeInTenYears === exampleObject.age + 10
+    ) {
+      doesApplyModification = true;
+    }
+
+    assert(doesApplyModification, 'failed to apply modification');
+  });
+
+  it('able to apply modificaitons using the objects that are inside arrays', () => {
+    const newArray = requestProp(
+      exampleArray,
+      ['age'],
+      [{ props: ['age'], operator: age => age + 10, computedName: 'myAgeInTenYears' }]
+    );
+
+      let doesApplyModification = true;
+
+    for (let i = 0; i < newArray.length; i++) {
+      if (
+        !newArray[i].hasOwnProperty('myAgeInTenYears') &&
+        newArray[i].myAgeInTenYears !== exampleArray.age + 10
+      ) {
+        doesApplyModification = false;
       }
     }
 
-    assert(expectedVal, 'Failed to apply modifications on retrieved props');
-  });
-
-  it('should apply modifications on multiple props', () => {
-    let expectedVal = true;
-
-    const retrievedVal = RequestProps(
-      {name: 'Jane', greetMessage: 'Hello'},
-      ['name', 'greetMessage'],
-      [
-        {
-          props: ['name', 'greetMessage'],
-          computedName: 'myGreetMessage',
-          operator: (n, g) => `${g} ${n}`
-        }
-      ]
-    )
-
-    if (!retrievedVal.hasOwnProperty('myGreetMessage')) expectedVal = false;
-    else if (retrievedVal['myGreetMessage'] !== 'Hello Jane') expectedVal = false;
-
-    assert(expectedVal, 'Fails to modify on multiple props');
+    assert(doesApplyModification, 'failed to apply modification to objects retrieved from arrays');
   });
 });
 
-describe('Throws error', () => {
-  it('should throw error when one of the first two arguments are missing', () => {
-    let expectedVal = false;
-    try {
-      RequestProps();
-    } catch(e) {
-      expectedVal = true;
-    }
+describe('Adding additional properties', () => {
+  it('adds new properties to returned object', () => {
+    const newObject = requestProp(
+      exampleObject,
+      [],
+      [],
+      [{ key: 'socialSecurityNumber', value: 42 }]
+    );
 
-    assert(expectedVal, 'Failed to throw Error when arguments are missing');
+    let didAddNewProp = newObject.hasOwnProperty('socialSecurityNumber') &&
+                        newObject.socialSecurityNumber === 42;
+
+    assert(didAddNewProp, 'failed to add new property');
   });
 
-  it('should throw error when operand is given but no operator is given', () => {
-    let expectedVal = false;
+  it('adds new props to objects that are returned from array', () => {
+    const newArray = requestProp(
+      exampleArray,
+      [],
+      [],
+      [{ key: 'socialSecurityNumber', value: 42 }]
+    );
 
-    try {
-      RequestProps(exampleArray, ['name:Name'], ['name']);
-    } catch(e) {
-      expectedVal = true;
+    let didAdd = true;
+
+    for (const obj of newArray) {
+      if (
+        !obj.hasOwnProperty('socialSecurityNumber') &&
+        obj.socialSecurityNumber !== 42
+      ) {
+        didAdd = false;
+      }
     }
 
-    assert(expectedVal, 'Failed to throw an error when modifier is not given');
+    assert(
+      didAdd,
+      'failed to add new property to objects that are extracted from arrays'
+    );
   });
+});
 
-  it('should throw error if a function isn\'t provided after multiple prop operation', () => {
-    let isPassing = false;
+
+describe('Error expectation', () => {
+  it('throws error when prop-source object not provided', () => {
+    let didThrowError = false;
 
     try {
-      requestProp(
-        exampleArray,
-        ['name: my_name'],
-        ['name'] // Normally expected a function
+      const newObject = requestProp(
+        null,
+        ['someProp']
       );
     } catch(e) {
-      isPassing = true;
+      didThrowError = true;
     }
 
-    assert(isPassing, 'Failed to throw error when when modifier isn\'t provided');
+    assert(didThrowError, 'failed to throw error in the case of missing prop-source object');
   });
 
-  it('should throw error when element is provided but not typeof function', () => {
-    let isPassing = false;
+  it('throws error when requested object is not in the array form', () => {
+    let didThrowError = false;
 
     try {
-      requestProp(
-        exampleArray,
-        ['name: Name', 'id: Id'],
-        ['name', 'some random value']
+      const newObject = requestProp(
+        exampleObject,
+        {}
       );
     } catch(e) {
-      isPassing = true;
+      didThrowError = true;
     }
 
-
-    assert(isPassing, 'Failed to throw error when element is provided to modifications array, but type fails');
-  });
-
-  it('should throw error if operating on multi prop and no modifier specified', () => {
-    let isPassing = false;
-
-    try {
-      requestProp(
-        exampleArray,
-        ['id: Id', 'name: Name'],
-        ['id, name: selfData', ]
-      )
-    } catch(e) {
-      isPassing = true;
-    }
-
-    assert(isPassing, 'we do both agree');
+    assert(didThrowError, 'failed to throw error when requestedProps isn\'t in the array form');
   });
 });
